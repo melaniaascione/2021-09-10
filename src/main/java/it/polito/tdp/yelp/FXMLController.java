@@ -5,7 +5,11 @@
 package it.polito.tdp.yelp;
 
 import java.net.URL;
+import java.util.Collections;
+import java.util.List;
 import java.util.ResourceBundle;
+
+import it.polito.tdp.yelp.model.Business;
 import it.polito.tdp.yelp.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -37,10 +41,10 @@ public class FXMLController {
     private TextField txtX2; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbCitta"
-    private ComboBox<?> cmbCitta; // Value injected by FXMLLoader
+    private ComboBox<String> cmbCitta; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbB1"
-    private ComboBox<?> cmbB1; // Value injected by FXMLLoader
+    private ComboBox<Business> cmbB1; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbB2"
     private ComboBox<?> cmbB2; // Value injected by FXMLLoader
@@ -50,7 +54,17 @@ public class FXMLController {
     
     @FXML
     void doCreaGrafo(ActionEvent event) {
+    	String city = this.cmbCitta.getValue();
+    	if (city==null) {
+    		this.txtResult.setText("Please select a city");
+    		return;
+    	}
     	
+    	//creazione grafo.
+    	this.model.creaGrafo(city);
+    	
+    	List<Business> vertici = this.model.getVertici(city);
+    	this.txtResult.setText("Grafo creato, con " + vertici.size() + " vertici e " + this.model.getNArchi()+ " archi\n");
     }
 
     @FXML
@@ -80,5 +94,7 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	List<String> citta = this.model.getCitta();
+    	this.cmbCitta.getItems().addAll(citta);
     }
 }
