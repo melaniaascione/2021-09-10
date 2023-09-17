@@ -1,16 +1,17 @@
 /**
+ /**
  * Sample Skeleton for 'Scene.fxml' Controller Class
  */
 
 package it.polito.tdp.yelp;
 
 import java.net.URL;
-import java.util.Collections;
 import java.util.List;
 import java.util.ResourceBundle;
 
 import it.polito.tdp.yelp.model.Business;
 import it.polito.tdp.yelp.model.Model;
+import it.polito.tdp.yelp.model.User;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -44,7 +45,7 @@ public class FXMLController {
     private ComboBox<String> cmbCitta; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbB1"
-    private ComboBox<Business> cmbB1; // Value injected by FXMLLoader
+    private ComboBox<String> cmbB1; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbB2"
     private ComboBox<?> cmbB2; // Value injected by FXMLLoader
@@ -54,22 +55,48 @@ public class FXMLController {
     
     @FXML
     void doCreaGrafo(ActionEvent event) {
-    	String city = this.cmbCitta.getValue();
-    	if (city==null) {
-    		this.txtResult.setText("Please select a city");
-    		return;
+    	txtResult.clear();
+        
+    	//lettura del parametro
+    	String citta = this.cmbCitta.getValue();
+    	
+    	if(citta==null) {
+    		txtResult.appendText("Selezionare una città.");
+    	}else {
+    		//creazione del grafo
+    		this.model.creaGrafo(citta);
+    		txtResult.appendText("Grafo creato con " + this.model.nVertici() + " vertici e " + this.model.nArchi() + " archi.");
+    		// Avendo creato il grafo, possiamo popolare le tendine
+        	cmbB1.getItems().addAll(this.model.getVerticiNomi(citta));
     	}
-    	
-    	//creazione grafo.
-    	this.model.creaGrafo(city);
-    	
-    	List<Business> vertici = this.model.getVertici(city);
-    	this.txtResult.setText("Grafo creato, con " + vertici.size() + " vertici e " + this.model.getNArchi()+ " archi\n");
     }
 
     @FXML
     void doCalcolaLocaleDistante(ActionEvent event) {
-
+    	
+    	Business businessScelto = null;
+    	String s = cmbB1.getValue();
+    	
+    	if (s==null) {
+    		txtResult.setText("Devi selezionare un locale dopo avere creato il grafo\n");
+    		return;
+    	}
+    	
+    	List<Business> vertici = model.getAllBusinesses();
+    	
+    	for(Business b : vertici) {
+    		if(b.getBusinessName().compareTo(s)==0) {
+    			businessScelto = b;
+    		}
+    	}
+    	
+    	List<Business> vicini = model.businessPiuLontani(businessScelto);
+    	
+    	txtResult.setText("LOCALE PIU' DISTANTE:\n");
+    	
+    	for(Business b2: vicini) {
+    		txtResult.appendText(b2.toString()+"\n");
+    	}
     	
     }
 
@@ -94,7 +121,6 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
-    	List<String> citta = this.model.getCitta();
-    	this.cmbCitta.getItems().addAll(citta);
+    	this.cmbCitta.getItems().addAll(this.model.getAllCitta());
     }
 }

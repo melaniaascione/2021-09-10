@@ -15,63 +15,103 @@ import it.polito.tdp.yelp.db.YelpDao;
 public class Model {
 	
 	private YelpDao dao;
-	private Graph<Business, DefaultWeightedEdge> grafo;
-	private Map<String, Business> businessIdMap; //crearla sempre
+	private Graph<Business, DefaultWeightedEdge> grafo ;
+	private List<Business> allNodes; //tutti gli oggetti
+	private Map<String, Business> idMap; //come String considero l'id del business
 	
-
+	
 	public Model() {
-		super();
 		this.dao = new YelpDao();
+		this.allNodes = new ArrayList<>();
+		this.idMap = new HashMap<>();
+	}
+	
+	
+	
+	//metodo per creare il grafo
+	public void creaGrafo(String citta) {
+		loadNodes();
+		this.grafo = new SimpleWeightedGraph(DefaultWeightedEdge.class);
+		Graphs.addAllVertices(grafo, this.dao.getVertici(citta));
+	
+		List<Arco> allEdges = this.dao.getArchi(citta, idMap);
 		
-		this.businessIdMap = new HashMap<String, Business>();
+		for (Arco edge : allEdges) {
+			Graphs.addEdgeWithVertices(this.grafo, edge.getB1(), edge.getB2(), edge.getPeso());
+		}
 		
-		//Popoliamo l'identity map, in caso ci servisse dopo
-		List<Business> businesses = this.dao.getAllBusiness();
-		for (Business b : businesses) {
-			this.businessIdMap.put(b.getBusinessId(), b);
-		}
-
+		System.out.println("Grafo creato");
+		System.out.println("ci sono " + this.grafo.vertexSet().size() + " vertici e " + this.grafo.edgeSet().size()+ " archi.");
 	}
 	
 	
-	public void creaGrafo(String city) {
-		//costruzione di un nuovo grafo
-		this.grafo = new SimpleWeightedGraph<Business, DefaultWeightedEdge>(DefaultWeightedEdge.class);
-				
-		//assegnazione dei vertici
-		List<Business> vertici = this.dao.getVertici(city);
-		Graphs.addAllVertices(this.grafo, vertici);
-				
-		//assegnazione degli archi
-		List<Arco> archi = this.dao.getArchi(city);
-		for (Arco a : archi) {
-			Business b1 = this.businessIdMap.get(a.getBusiness_id1());
-			Business b2 = this.businessIdMap.get(a.getBusiness_id2());
-			double peso = a.getLat1(); //il peso è N ed è un'attributo della classe arco
-			Graphs.addEdgeWithVertices(this.grafo, b1, b2, peso);
+	
+	
+	
+	//metodo per riempire la mappa con le coppie id-business
+	private void loadNodes(){
+		if(this.allNodes.isEmpty()) { //se la lista dei business è vuota
+			this.allNodes = this.dao.getAllBusiness(); //riempi la lista business
+		}
+			
+		if(this.idMap.isEmpty()) {
+			for(Business b : this.allNodes) { //per ciascun business nella lista business
+				this.idMap.put(b.getBusinessId(), b);  //registralo nella mappa con il suo id
+			}
 		}
 	}
 	
 	
 	
-	
-	public List<String> getCitta(){
-		return this.dao.getCitta();
+	//metodo per trovare l'altro nodo a estremo dell'arco di peso massimo
+	public List<Business> businessPiuLontani(Business b) {
+		int max = 0 ;
+		for(DefaultWeightedEdge e: this.grafo.edgesOf(b)) {
+			if(this.grafo.getEdgeWeight(e)>max) {
+				max = (int)this.grafo.getEdgeWeight(e);				
+			}
+		}
+			
+		List<Business> result = new ArrayList<>();
+		for(DefaultWeightedEdge e: this.grafo.edgesOf(b)) {
+			if((int)this.grafo.getEdgeWeight(e) == max) {
+				Business b2 = Graphs.getOppositeVertex(this.grafo, e, b);
+				result.add(b2);
+			}
+		}
+		return result ;
 	}
 	
 	
 	
-	
-	public List<Business> getVertici(String city){
-		return this.dao.getVertici(city);
+	public List<Business> getVertici(String citta){
+		return this.dao.getVertici(citta);
 	}
 	
 	
+	public List<String> getVerticiNomi(String citta){
+		return this.dao.getVerticiNomi(citta);
+	}
 	
-	public int getNArchi(){
+	
+	public List<String> getAllCitta(){
+		return this.dao.getAllCitta();
+	}
+	
+	
+	//metodo che mi restituisce il numero di vertici
+	public int nVertici() {
+		return this.grafo.vertexSet().size();
+	}
+		
+	//metodo che mi restituisce il numero di archi
+	public int nArchi() {
 		return this.grafo.edgeSet().size();
 	}
 	
 	
+	public List<Business> getAllBusinesses(){
+		return this.dao.getAllBusiness();
+	}
 	
 }
